@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,9 +26,13 @@ import { useTheme } from '@/hooks/use-theme';
 import { useThemePreference } from '@/providers/theme-preference-provider';
 import { GameState, GuessResult, MAX_GUESSES, StatsState, ThemePreference } from '@/types/wordle';
 
+const COMPACT_LAYOUT_BREAKPOINT = 400;
+
 export default function HomeScreen() {
   const theme = useTheme();
   const { themePreference, setThemePreference, ready } = useThemePreference();
+  const { width } = useWindowDimensions();
+  const isCompact = width <= COMPACT_LAYOUT_BREAKPOINT;
   const [game, setGame] = useState<GameState | null>(null);
   const [stats, setStats] = useState<StatsState>(EMPTY_STATS);
   const [message, setMessage] = useState('Type your first guess.');
@@ -206,16 +211,21 @@ export default function HomeScreen() {
         />
 
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="always">
-          <View style={styles.topBar}>
-            <View>
-              <ThemedText type="smallBold" themeColor="textSecondary">
+          <View style={[styles.topBar, isCompact && styles.topBarCompact]}>
+            <View style={styles.titleBlock}>
+              <ThemedText type="smallBold" themeColor="textSecondary" numberOfLines={1}>
                 Infinite Wordle
               </ThemedText>
             </View>
-            <View style={styles.actions}>
-              <TopAction label="Help" onPress={() => setHelpVisible(true)} />
-              <TopAction label="Stats" onPress={() => setStatsVisible(true)} />
-              <TopAction label="Settings" onPress={() => setSettingsVisible(true)} />
+            <View style={[styles.actions, isCompact && styles.actionsCompact]}>
+              <TopAction label="Help" compact={isCompact} onPress={() => setHelpVisible(true)} />
+              <TopAction label="Stats" compact={isCompact} onPress={() => setStatsVisible(true)} />
+              <TopAction
+                label={isCompact ? 'Prefs' : 'Settings'}
+                accessibilityLabel="Settings"
+                compact={isCompact}
+                onPress={() => setSettingsVisible(true)}
+              />
             </View>
           </View>
 
@@ -351,10 +361,30 @@ export default function HomeScreen() {
   );
 }
 
-function TopAction({ label, onPress }: { label: string; onPress: () => void }) {
+function TopAction({
+  label,
+  onPress,
+  accessibilityLabel,
+  compact,
+}: {
+  label: string;
+  onPress: () => void;
+  accessibilityLabel?: string;
+  compact?: boolean;
+}) {
   return (
-    <Pressable style={({ pressed }) => [styles.topAction, pressed && styles.topActionPressed]} onPress={onPress}>
-      <ThemedText type="smallBold">{label}</ThemedText>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      style={({ pressed }) => [
+        styles.topAction,
+        compact && styles.topActionCompact,
+        pressed && styles.topActionPressed,
+      ]}
+      onPress={onPress}>
+      <ThemedText type="smallBold" style={compact ? styles.topActionTextCompact : undefined} numberOfLines={1}>
+        {label}
+      </ThemedText>
     </Pressable>
   );
 }
@@ -461,9 +491,16 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: Spacing.three,
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
+  },
+  topBarCompact: {
+    gap: Spacing.two,
+  },
+  titleBlock: {
+    flex: 1,
+    minWidth: 0,
   },
   title: {
     maxWidth: 420,
@@ -473,16 +510,30 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: Spacing.two,
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
+    flexShrink: 0,
+    alignItems: 'center',
+  },
+  actionsCompact: {
+    gap: Spacing.one,
   },
   topAction: {
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     borderRadius: 999,
     backgroundColor: 'rgba(127, 112, 95, 0.12)',
+    flexShrink: 0,
+  },
+  topActionCompact: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
   topActionPressed: {
     opacity: 0.8,
+  },
+  topActionTextCompact: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   heroCard: {
     borderWidth: 1,

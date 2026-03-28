@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Colors, Spacing } from '@/constants/theme';
 import { LetterStatus } from '@/types/wordle';
@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { useThemePreference } from '@/providers/theme-preference-provider';
 
 const KEY_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+const COMPACT_LAYOUT_BREAKPOINT = 400;
 
 type WordleKeyboardProps = {
   statuses: Record<string, LetterStatus>;
@@ -23,25 +24,42 @@ export function WordleKeyboard({
 }: WordleKeyboardProps) {
   const { themePreference } = useThemePreference();
   const palette = Colors[themePreference];
+  const { width } = useWindowDimensions();
+  const isCompact = width <= COMPACT_LAYOUT_BREAKPOINT;
 
   return (
     <View style={styles.wrapper}>
       {KEY_ROWS.map((row, rowIndex) => (
-        <View key={row} style={styles.row}>
+        <View key={row} style={[styles.row, isCompact && styles.rowCompact]}>
           {rowIndex === 2 ? (
-            <KeyboardKey label="Enter" wide palette={palette} onPress={onEnterPress} />
+            <KeyboardKey
+              label="Enter"
+              accessibilityLabel="Enter"
+              wide
+              compact={isCompact}
+              palette={palette}
+              onPress={onEnterPress}
+            />
           ) : null}
           {Array.from(row).map((letter) => (
             <KeyboardKey
               key={letter}
               label={letter}
               status={statuses[letter.toLowerCase()]}
+              compact={isCompact}
               palette={palette}
               onPress={() => onKeyPress(letter.toLowerCase())}
             />
           ))}
           {rowIndex === 2 ? (
-            <KeyboardKey label="Delete" wide palette={palette} onPress={onDeletePress} />
+            <KeyboardKey
+              label={isCompact ? 'Del' : 'Delete'}
+              accessibilityLabel="Delete"
+              wide
+              compact={isCompact}
+              palette={palette}
+              onPress={onDeletePress}
+            />
           ) : null}
         </View>
       ))}
@@ -52,12 +70,22 @@ export function WordleKeyboard({
 type KeyboardKeyProps = {
   label: string;
   onPress: () => void;
+  accessibilityLabel?: string;
   wide?: boolean;
+  compact?: boolean;
   status?: LetterStatus;
-  palette: (typeof Colors)['light'];
+  palette: (typeof Colors)[keyof typeof Colors];
 };
 
-function KeyboardKey({ label, onPress, wide, status, palette }: KeyboardKeyProps) {
+function KeyboardKey({
+  label,
+  onPress,
+  accessibilityLabel,
+  wide,
+  compact,
+  status,
+  palette,
+}: KeyboardKeyProps) {
   const backgroundColor =
     status === 'correct'
       ? '#2f8f62'
@@ -70,13 +98,18 @@ function KeyboardKey({ label, onPress, wide, status, palette }: KeyboardKeyProps
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
       onPress={onPress}
       style={({ pressed }) => [
         styles.key,
+        compact && styles.keyCompact,
         wide && styles.keyWide,
+        wide && compact && styles.keyWideCompact,
         { backgroundColor, opacity: pressed ? 0.8 : 1 },
       ]}>
-      <ThemedText style={[styles.keyLabel, status && styles.filledKeyLabel]}>{label}</ThemedText>
+      <ThemedText style={[styles.keyLabel, compact && styles.keyLabelCompact, status && styles.filledKeyLabel]}>
+        {label}
+      </ThemedText>
     </Pressable>
   );
 }
@@ -90,24 +123,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: Spacing.one,
+    flexWrap: 'nowrap',
+  },
+  rowCompact: {
+    gap: 3,
   },
   key: {
     minWidth: 30,
     flex: 1,
-    maxWidth: 44,
+    flexShrink: 1,
     paddingVertical: 14,
     paddingHorizontal: 4,
     borderRadius: 12,
     alignItems: 'center',
   },
+  keyCompact: {
+    minWidth: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 2,
+  },
   keyWide: {
-    flex: 1.5,
-    maxWidth: 72,
+    flex: 1.45,
+  },
+  keyWideCompact: {
+    flex: 1.25,
   },
   keyLabel: {
     fontSize: 13,
     lineHeight: 16,
     fontWeight: '700',
+  },
+  keyLabelCompact: {
+    fontSize: 12,
+    lineHeight: 14,
   },
   filledKeyLabel: {
     color: '#ffffff',
