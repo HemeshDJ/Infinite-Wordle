@@ -246,6 +246,26 @@ export default function HomeScreen() {
             </View>
           </Pressable>
 
+          {game.status !== 'playing' ? (
+            <ThemedView style={[styles.replayBanner, getHeroBackground(themePreference)]}>
+              <View style={styles.replayCopy}>
+                <ThemedText type="smallBold">
+                  {game.status === 'won' ? 'Puzzle solved' : 'Round finished'}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {game.status === 'won'
+                    ? `You got it in ${game.guesses.length} ${game.guesses.length === 1 ? 'guess' : 'guesses'}.`
+                    : `The answer was ${game.answer.toUpperCase()}.`}
+                </ThemedText>
+              </View>
+              <Pressable style={styles.inlinePlayAgainButton} onPress={handlePlayAgain}>
+                <ThemedText type="smallBold" style={styles.playAgainLabel}>
+                  Play again
+                </ThemedText>
+              </Pressable>
+            </ThemedView>
+          ) : null}
+
           <WordleKeyboard
             statuses={keyboardStatuses}
             onKeyPress={handleLetter}
@@ -492,6 +512,28 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     alignSelf: 'center',
     gap: Spacing.two,
+  },
+  replayBanner: {
+    borderWidth: 1,
+    borderRadius: 22,
+    padding: Spacing.three,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.three,
+    flexWrap: 'wrap',
+  },
+  replayCopy: {
+    flex: 1,
+    minWidth: 220,
+    gap: Spacing.one,
+  },
+  inlinePlayAgainButton: {
+    borderRadius: 16,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.three,
+    alignItems: 'center',
+    backgroundColor: '#2f8f62',
   },
   legendRow: {
     gap: Spacing.three,
