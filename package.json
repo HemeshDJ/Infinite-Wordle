@@ -8,7 +8,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "build:web": "expo export --platform web",
+    "build:web:pages": "EXPO_BASE_URL=${GITHUB_PAGES_BASE_PATH:-Infinite-Wordle} GITHUB_PAGES_BASE_PATH=${GITHUB_PAGES_BASE_PATH:-Infinite-Wordle} expo export --platform web && node ./scripts/prepare-github-pages.js"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

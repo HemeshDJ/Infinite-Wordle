@@ -60,7 +60,20 @@ npm run web
 - `npm run ios` opens the iOS target.
 - `npm run web` runs the web build locally.
 - `npm run lint` runs Expo linting.
+- `npm run build:web` exports the static web app to `dist/`.
+- `npm run build:web:pages` exports the app with the GitHub Pages base path.
 - `npm run reset-project` restores the base Expo starter layout.
+
+## GitHub Pages Hosting
+
+This repo is set up to deploy to GitHub Pages with GitHub Actions.
+
+1. Push the repository to GitHub.
+2. In GitHub, open `Settings` -> `Pages`.
+3. Under `Build and deployment`, set `Source` to `GitHub Actions`.
+4. Push to the `main` branch, or run the `Deploy GitHub Pages` workflow manually.
+
+For this repository name, the site is exported with the `/Infinite-Wordle/` base path so assets and routes work correctly on Pages project URLs.
 
 ## Gameplay Notes
 
