@@ -211,9 +211,6 @@ export default function HomeScreen() {
               <ThemedText type="smallBold" themeColor="textSecondary">
                 Infinite Wordle
               </ThemedText>
-              <ThemedText type="title" style={styles.title}>
-                Play the next good word
-              </ThemedText>
             </View>
             <View style={styles.actions}>
               <TopAction label="Help" onPress={() => setHelpVisible(true)} />
