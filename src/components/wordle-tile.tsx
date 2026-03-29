@@ -62,7 +62,7 @@ export function WordleTile({ letter, status, revealKey, large = true }: WordleTi
   );
 }
 
-function getTileBackground(status: LetterStatus | undefined, palette: (typeof Colors)['light']) {
+function getTileBackground(status: LetterStatus | undefined, palette: (typeof Colors)[keyof typeof Colors]) {
   if (!status) {
     return palette.background;
   }
@@ -75,7 +75,7 @@ function getTileBackground(status: LetterStatus | undefined, palette: (typeof Co
   return palette.backgroundSelected;
 }
 
-function getTileBorder(status: LetterStatus | undefined, palette: (typeof Colors)['light']) {
+function getTileBorder(status: LetterStatus | undefined, palette: (typeof Colors)[keyof typeof Colors]) {
   if (status) {
     return 'transparent';
   }

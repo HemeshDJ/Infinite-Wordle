@@ -9,6 +9,10 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
+    "build:android:production": "eas build --platform android --profile production",
+    "submit:android:internal": "eas submit --platform android --profile internal",
+    "submit:android:production": "eas submit --platform android --profile production",
     "build:web": "expo export --platform web",
     "build:web:pages": "EXPO_BASE_URL=${GITHUB_PAGES_BASE_PATH:-Infinite-Wordle} GITHUB_PAGES_BASE_PATH=${GITHUB_PAGES_BASE_PATH:-Infinite-Wordle} expo export --platform web && node ./scripts/prepare-github-pages.js"
   },
@@ -43,6 +47,8 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~55.0.0",
     "typescript": "~5.9.2"
   },
   "private": true

@@ -8,6 +8,7 @@ export default function TabLayout() {
     <ThemePreferenceProvider>
       <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="privacy" />
       </Stack>
     </ThemePreferenceProvider>
   );

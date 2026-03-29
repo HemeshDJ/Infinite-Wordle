@@ -149,7 +149,10 @@ export function chooseNextAnswer(usedAnswers: string[]) {
   return { answer: nextAnswer, usedAnswers: nextUsedAnswers };
 }
 
-export function applyGuess(game: GameState, guess: string) {
+export function applyGuess(game: GameState, guess: string): {
+  game: GameState;
+  latestGuess: GuessResult;
+} {
   const evaluation = evaluateGuess(guess, game.answer);
   const guesses = [...game.guesses, { guess, evaluation }];
   const won = guess === game.answer;

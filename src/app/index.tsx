@@ -1,6 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -19,6 +20,7 @@ import { ToggleRow } from '@/components/toggle-row';
 import { WordleKeyboard } from '@/components/wordle-keyboard';
 import { WordleRow } from '@/components/wordle-row';
 import { WordleTile } from '@/components/wordle-tile';
+import { APP_NAME, DATA_DISCLOSURE_POINTS, PRIVACY_POLICY_SUMMARY, PRIVACY_POLICY_URL, SUPPORT_EMAIL } from '@/constants/app-info';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { EMPTY_STATS, applyGuess, buildKeyboardStatuses, chooseNextAnswer, createInitialGame, getHardModeViolation, isCompleteWord, isValidGuess, sanitizeGuess, updateStats } from '@/lib/wordle';
 import { loadPersistedState, savePersistedState } from '@/lib/storage';
@@ -39,6 +41,8 @@ export default function HomeScreen() {
   const [helpVisible, setHelpVisible] = useState(false);
   const [statsVisible, setStatsVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [aboutVisible, setAboutVisible] = useState(false);
+  const [privacyVisible, setPrivacyVisible] = useState(false);
   const [resultVisible, setResultVisible] = useState(false);
   const [activeRevealRow, setActiveRevealRow] = useState(-1);
   const [shakeRow, setShakeRow] = useState(-1);
@@ -99,7 +103,8 @@ export default function HomeScreen() {
     );
   }
 
-  const keyboardStatuses = buildKeyboardStatuses(game.guesses);
+  const currentGame = game;
+  const keyboardStatuses = buildKeyboardStatuses(currentGame.guesses);
   const winRate = stats.played === 0 ? 0 : Math.round((stats.wins / stats.played) * 100);
 
   function updateCurrentGuess(nextGuess: string) {
@@ -108,25 +113,25 @@ export default function HomeScreen() {
   }
 
   function handleLetter(letter: string) {
-    if (game.status !== 'playing' || game.currentGuess.length >= 5) {
+    if (currentGame.status !== 'playing' || currentGame.currentGuess.length >= 5) {
       return;
     }
-    updateCurrentGuess(game.currentGuess + letter);
+    updateCurrentGuess(currentGame.currentGuess + letter);
   }
 
   function handleDelete() {
-    if (game.status !== 'playing') {
+    if (currentGame.status !== 'playing') {
       return;
     }
-    updateCurrentGuess(game.currentGuess.slice(0, -1));
+    updateCurrentGuess(currentGame.currentGuess.slice(0, -1));
   }
 
   async function handleSubmit() {
-    if (game.status !== 'playing') {
+    if (currentGame.status !== 'playing') {
       return;
     }
 
-    const guess = sanitizeGuess(game.currentGuess);
+    const guess = sanitizeGuess(currentGame.currentGuess);
     if (!isCompleteWord(guess)) {
       rejectGuess('Guess must be 5 letters.');
       return;
@@ -136,13 +141,13 @@ export default function HomeScreen() {
       return;
     }
 
-    const hardModeViolation = getHardModeViolation(guess, game.guesses, game.mode);
+    const hardModeViolation = getHardModeViolation(guess, currentGame.guesses, currentGame.mode);
     if (hardModeViolation) {
       rejectGuess(hardModeViolation);
       return;
     }
 
-    const applied = applyGuess(game, guess);
+    const applied = applyGuess(currentGame, guess);
     const nextStats = updateStats(stats, applied.game);
 
     setGame(applied.game);
@@ -161,16 +166,16 @@ export default function HomeScreen() {
 
   async function rejectGuess(nextMessage: string) {
     setMessage(nextMessage);
-    setShakeRow(game.guesses.length);
+    setShakeRow(currentGame.guesses.length);
     setShakeNonce((value) => value + 1);
     await triggerHaptic('error');
     setTimeout(() => setShakeRow(-1), 250);
   }
 
   function handlePlayAgain() {
-    const nextRound = startNewRound(game.usedAnswers, game.mode);
+    const nextRound = startNewRound(currentGame.usedAnswers, currentGame.mode);
     setGame(nextRound);
-    setMessage(game.status === 'won' ? 'Fresh puzzle ready.' : `The word was ${game.answer.toUpperCase()}. New round ready.`);
+    setMessage(currentGame.status === 'won' ? 'Fresh puzzle ready.' : `The word was ${currentGame.answer.toUpperCase()}. New round ready.`);
     setResultVisible(false);
     setActiveRevealRow(-1);
     setShakeRow(-1);
@@ -189,9 +194,17 @@ export default function HomeScreen() {
   }
 
   function handleModeToggle() {
-    const nextMode = game.mode === 'standard' ? 'hard' : 'standard';
-    setGame({ ...game, mode: nextMode });
+    const nextMode = currentGame.mode === 'standard' ? 'hard' : 'standard';
+    setGame({ ...currentGame, mode: nextMode });
     setMessage(nextMode === 'hard' ? 'Hard mode is on.' : 'Standard mode is back on.');
+  }
+
+  async function openExternalUrl(url: string) {
+    await Linking.openURL(url);
+  }
+
+  async function openSupportEmail() {
+    await Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`${APP_NAME} support`)}`);
   }
 
   return (
@@ -231,7 +244,7 @@ export default function HomeScreen() {
 
           <ThemedView style={[styles.heroCard, getHeroBackground(themePreference)]}>
             <View style={styles.heroMeta}>
-              <ThemedText type="smallBold">Mode: {game.mode === 'hard' ? 'Hard' : 'Standard'}</ThemedText>
+              <ThemedText type="smallBold">Mode: {currentGame.mode === 'hard' ? 'Hard' : 'Standard'}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
                 {stats.currentStreak} streak • {stats.wins} wins • {winRate}% win rate
               </ThemedText>
@@ -244,25 +257,25 @@ export default function HomeScreen() {
               {Array.from({ length: MAX_GUESSES }, (_, rowIndex) => (
                 <WordleRow
                   key={`row-${rowIndex}`}
-                  guess={game.guesses[rowIndex]}
-                  currentGuess={rowIndex === game.guesses.length ? game.currentGuess : ''}
-                  revealKey={activeRevealRow === rowIndex ? game.guesses.length : 0}
+                  guess={currentGame.guesses[rowIndex]}
+                  currentGuess={rowIndex === currentGame.guesses.length ? currentGame.currentGuess : ''}
+                  revealKey={activeRevealRow === rowIndex ? currentGame.guesses.length : 0}
                   shakeKey={shakeRow === rowIndex ? shakeNonce : 0}
                 />
               ))}
             </View>
           </Pressable>
 
-          {game.status !== 'playing' ? (
+          {currentGame.status !== 'playing' ? (
             <ThemedView style={[styles.replayBanner, getHeroBackground(themePreference)]}>
               <View style={styles.replayCopy}>
                 <ThemedText type="smallBold">
-                  {game.status === 'won' ? 'Puzzle solved' : 'Round finished'}
+                  {currentGame.status === 'won' ? 'Puzzle solved' : 'Round finished'}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {game.status === 'won'
-                    ? `You got it in ${game.guesses.length} ${game.guesses.length === 1 ? 'guess' : 'guesses'}.`
-                    : `The answer was ${game.answer.toUpperCase()}.`}
+                  {currentGame.status === 'won'
+                    ? `You got it in ${currentGame.guesses.length} ${currentGame.guesses.length === 1 ? 'guess' : 'guesses'}.`
+                    : `The answer was ${currentGame.answer.toUpperCase()}.`}
                 </ThemedText>
               </View>
               <Pressable style={styles.inlinePlayAgainButton} onPress={handlePlayAgain}>
@@ -328,7 +341,7 @@ export default function HomeScreen() {
             <ToggleRow
               label="Hard mode"
               description="Revealed hints must be reused in every next guess."
-              value={game.mode === 'hard'}
+              value={currentGame.mode === 'hard'}
               onToggle={handleModeToggle}
             />
             <ToggleRow
@@ -340,6 +353,12 @@ export default function HomeScreen() {
             <Pressable style={styles.textButton} onPress={() => setHelpVisible(true)}>
               <ThemedText type="smallBold">Open help</ThemedText>
             </Pressable>
+            <Pressable style={styles.textButton} onPress={() => setPrivacyVisible(true)}>
+              <ThemedText type="smallBold">Privacy policy</ThemedText>
+            </Pressable>
+            <Pressable style={styles.textButton} onPress={() => setAboutVisible(true)}>
+              <ThemedText type="smallBold">About and support</ThemedText>
+            </Pressable>
             <Pressable style={[styles.textButton, styles.resetButton]} onPress={handleResetStats}>
               <ThemedText type="smallBold" style={styles.resetText}>
                 Reset stats
@@ -348,8 +367,67 @@ export default function HomeScreen() {
           </View>
         </ModalCard>
 
-        <ModalCard visible={resultVisible} title={game.status === 'won' ? 'You solved it' : 'Round over'} onClose={() => setResultVisible(false)}>
-          <ThemedText>{getResultMessage(game)}</ThemedText>
+        <ModalCard visible={privacyVisible} title="Privacy policy" onClose={() => setPrivacyVisible(false)}>
+          <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalScrollContent}>
+            <ThemedText>
+              {APP_NAME} is designed to work without creating an account or sending your gameplay progress to a server.
+            </ThemedText>
+            <View style={styles.infoSection}>
+              <ThemedText type="smallBold">What the app stores</ThemedText>
+              {PRIVACY_POLICY_SUMMARY.map((entry) => (
+                <View key={entry} style={styles.infoRow}>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    •
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary" style={styles.infoText}>
+                    {entry}
+                  </ThemedText>
+                </View>
+              ))}
+            </View>
+            <View style={styles.infoSection}>
+              <ThemedText type="smallBold">Google Play disclosure notes</ThemedText>
+              {DATA_DISCLOSURE_POINTS.map((entry) => (
+                <View key={entry} style={styles.infoRow}>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    •
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary" style={styles.infoText}>
+                    {entry}
+                  </ThemedText>
+                </View>
+              ))}
+            </View>
+            <ThemedText type="small" themeColor="textSecondary">
+              Replace the placeholder email address and public privacy-policy URL before publishing to Google Play.
+            </ThemedText>
+            <Pressable style={styles.secondaryButton} onPress={() => openExternalUrl(PRIVACY_POLICY_URL)}>
+              <ThemedText type="smallBold">Open public policy URL</ThemedText>
+            </Pressable>
+          </ScrollView>
+        </ModalCard>
+
+        <ModalCard visible={aboutVisible} title="About and support" onClose={() => setAboutVisible(false)}>
+          <View style={styles.infoSection}>
+            <ThemedText>
+              {APP_NAME} is an offline five-letter word game with endless rounds, optional hard mode, and on-device stat tracking.
+            </ThemedText>
+            <View style={styles.infoPanel}>
+              <LabelValue label="Support email" value={SUPPORT_EMAIL} />
+              <LabelValue label="Android package" value="com.sorry.infinitewordle" />
+              <LabelValue label="Version" value="1.0.0" />
+            </View>
+          </View>
+          <Pressable style={styles.textButton} onPress={() => setPrivacyVisible(true)}>
+            <ThemedText type="smallBold">Review privacy policy</ThemedText>
+          </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={openSupportEmail}>
+            <ThemedText type="smallBold">Email support</ThemedText>
+          </Pressable>
+        </ModalCard>
+
+        <ModalCard visible={resultVisible} title={currentGame.status === 'won' ? 'You solved it' : 'Round over'} onClose={() => setResultVisible(false)}>
+          <ThemedText>{getResultMessage(currentGame)}</ThemedText>
           <Pressable style={styles.playAgainButton} onPress={handlePlayAgain}>
             <ThemedText type="smallBold" style={styles.playAgainLabel}>
               Play again
@@ -409,6 +487,17 @@ function WordLegend({
           {description}
         </ThemedText>
       </View>
+    </View>
+  );
+}
+
+function LabelValue({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.labelValueRow}>
+      <ThemedText type="smallBold">{label}</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary" style={styles.labelValueText}>
+        {value}
+      </ThemedText>
     </View>
   );
 }
@@ -606,6 +695,12 @@ const styles = StyleSheet.create({
   distribution: {
     gap: Spacing.two,
   },
+  modalScroll: {
+    maxHeight: 420,
+  },
+  modalScrollContent: {
+    gap: Spacing.three,
+  },
   distributionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -626,11 +721,41 @@ const styles = StyleSheet.create({
   settingsBlock: {
     gap: Spacing.four,
   },
+  infoSection: {
+    gap: Spacing.two,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.two,
+  },
+  infoText: {
+    flex: 1,
+  },
+  infoPanel: {
+    borderRadius: 20,
+    padding: Spacing.three,
+    gap: Spacing.two,
+    backgroundColor: 'rgba(127, 127, 127, 0.08)',
+  },
+  labelValueRow: {
+    gap: Spacing.half,
+  },
+  labelValueText: {
+    lineHeight: 18,
+  },
   textButton: {
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
     borderRadius: 16,
     backgroundColor: 'rgba(127, 112, 95, 0.12)',
+    alignItems: 'center',
+  },
+  secondaryButton: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.three,
+    borderRadius: 16,
+    backgroundColor: 'rgba(60, 135, 247, 0.16)',
     alignItems: 'center',
   },
   resetButton: {

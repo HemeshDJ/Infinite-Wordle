@@ -3,6 +3,7 @@
     "name": "Infinite-Wordle",
     "slug": "Infinite-Wordle",
     "version": "1.0.0",
+    "description": "An endless Wordle-style puzzle game with local stat tracking, hard mode, and fresh five-letter puzzles every round.",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "infinitewordle",
@@ -12,6 +13,7 @@
     },
     "android": {
       "package": "com.sorry.infinitewordle",
+      "permissions": [],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
