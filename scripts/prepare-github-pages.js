@@ -9,19 +9,24 @@ if (!basePath) {
   throw new Error('GITHUB_PAGES_BASE_PATH must not be empty.');
 }
 
-const replacements = [
-  ['"/_expo/', `"/${basePath}/_expo/`],
-  ['"/favicon.ico"', `"/${basePath}/favicon.ico"`],
-  ["'/_expo/", `'/${basePath}/_expo/`],
-  ["'/favicon.ico'", `'/${basePath}/favicon.ico'`],
-  ['`/_expo/', `\`/${basePath}/_expo/`],
-];
+const prefix = `/${basePath}`;
 
 function rewriteFile(filePath) {
   const original = fs.readFileSync(filePath, 'utf8');
   let updated = original;
 
+  const replacements = [
+    ['"/_expo/', `"${prefix}/_expo/`],
+    ['"/favicon.ico"', `"${prefix}/favicon.ico"`],
+    ["'/_expo/", `'${prefix}/_expo/`],
+    ["'/favicon.ico'", `'${prefix}/favicon.ico'`],
+    ['`/_expo/', `\`${prefix}/_expo/`],
+  ];
+
   for (const [from, to] of replacements) {
+    if (updated.includes(to)) {
+      continue;
+    }
     updated = updated.split(from).join(to);
   }
 
@@ -46,3 +51,9 @@ function walk(currentPath) {
 }
 
 walk(distDir);
+
+const indexHtml = path.join(distDir, 'index.html');
+const notFoundHtml = path.join(distDir, '404.html');
+if (fs.existsSync(indexHtml)) {
+  fs.copyFileSync(indexHtml, notFoundHtml);
+}

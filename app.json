@@ -41,10 +41,13 @@
     ],
     "experiments": {
       "typedRoutes": true,
-      "reactCompiler": true
+      "reactCompiler": true,
+      "baseUrl": "/Infinite-Wordle"
     },
     "extra": {
-      "router": {},
+      "router": {
+        "origin": "https://hemeshdj.github.io"
+      },
       "eas": {
         "projectId": "c6303ada-0c5a-41be-9920-6869ee71621b"
       }
